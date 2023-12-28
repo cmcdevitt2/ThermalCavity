@@ -1,0 +1,105 @@
+GPU Driver '535' detected
+
+Request Start Time:	2023-12-10-22:05:55
+Code Start Time:   	2023-12-10-22:51:02
+
+2023-12-10 22:51:09.690499: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-12-10 22:51:09.708361: I tensorflow/compiler/xla/service/service.cc:170] XLA service 0x55c599ef4290 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+2023-12-10 22:51:09.708395: I tensorflow/compiler/xla/service/service.cc:178]   StreamExecutor device (0): Host, Default Version
+2023-12-10 22:51:09.909947: I tensorflow/compiler/xla/service/service.cc:170] XLA service 0x55c5960d1700 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2023-12-10 22:51:09.910071: I tensorflow/compiler/xla/service/service.cc:178]   StreamExecutor device (0): NVIDIA A100-SXM4-80GB, Compute Capability 8.0
+2023-12-10 22:51:10.285165: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1532] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 78933 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:47:00.0, compute capability: 8.0
+['models/2023-12-10-22:05:55--Ra=1e6--nepochs=5e4/Script.py',
+ 'models/2023-12-10-22:05:55--Ra=1e6--nepochs=5e4/',
+ '1702266662',
+ '--Ra=1e6',
+ '--nepochs=5e4']
+
+Code Runtime:
+0:0:0:8 (Days:Hours:Minutes:Seconds)
+
+Current version of Python is  3.8.18 | packaged by conda-forge | (default, Oct 10 2023, 15:44:36) 
+[GCC 12.3.0]
+TensorFlow version: 2.9.0
+[PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU'),
+ PhysicalDevice(name='/physical_device:XLA_CPU:0', device_type='XLA_CPU'),
+ PhysicalDevice(name='/physical_device:XLA_GPU:0', device_type='XLA_GPU'),
+ PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+Model: "model"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_1 (InputLayer)        [(None, 2)]               0         
+                                                                 
+ dense (Dense)               (None, 64)                192       
+                                                                 
+ dense_1 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_2 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_3 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_4 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_5 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_6 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_7 (Dense)             (None, 3)                 195       
+                                                                 
+=================================================================
+Total params: 25,347
+Trainable params: 25,347
+Non-trainable params: 0
+_________________________________________________________________
+
+Checkpoint 0 of 1
+
+Code Runtime:
+0:0:0:9 (Days:Hours:Minutes:Seconds)
+
+Ra = 1e6
+Psi_Mid_Point: 	 -0.17686948655664275 	Reference:	 16.32
+u_max: 	 0.46244534836315626 	Reference:	 64.63
+w_max: 	 0.028643181502194026 	Reference:	 219.36
+------------------------------------------------------------------------------------------------------------------------
+Epoch: 5000 / 50000 	Loss: 0.34015728544764773 	Loss vec:  [0.3344337883961005 0.0041432203801068561 0.0015802766714403762]
+Epoch: 10000 / 50000 	Loss: 0.18441082265270553 	Loss vec:  [0.18235963110857908 0.0017187158879082569 0.00033247565621819707]
+Epoch: 15000 / 50000 	Loss: 0.156524484207449 	Loss vec:  [0.15520982876315409 0.0010824537986697865 0.00023220164562511923]
+Epoch: 20000 / 50000 	Loss: 0.14417198288040359 	Loss vec:  [0.14291794694243815 0.0010369599632894572 0.00021707597467597966]
+Epoch: 25000 / 50000 	Loss: 0.1143557876985294 	Loss vec:  [0.11196057742274421 0.0021210717040494858 0.00027413857173571427]
+Epoch: 30000 / 50000 	Loss: 0.093077043455037992 	Loss vec:  [0.091537763800677491 0.0014231682120562918 0.00011611144230420757]
+Epoch: 35000 / 50000 	Loss: 0.071079772909899461 	Loss vec:  [0.069242145341264189 0.0017623052163390674 7.5322352296204207e-05]
+Epoch: 40000 / 50000 	Loss: 0.059906796794814705 	Loss vec:  [0.058491156496633556 0.001302224090334838 0.00011341620784630488]
+Epoch: 45000 / 50000 	Loss: 0.04741755721513724 	Loss vec:  [0.046132621495755949 0.0012184757765358028 6.6459942845484651e-05]
+Epoch: 50000 / 50000 	Loss: 0.035885952304754727 	Loss vec:  [0.034406187915327041 0.0014014451484565525 7.8319240971132934e-05]
+Epoch: 55000 / 50000 	Loss: 0.025499459316555256 	Loss vec:  [0.0246119565781456 0.00085274754693522438 3.4755191474432584e-05]
+Epoch: 60000 / 50000 	Loss: 0.019943760396401042 	Loss vec:  [0.019339087177401813 0.00058541567671769278 1.9257542281538903e-05]
+Epoch: 65000 / 50000 	Loss: 0.017354990605438429 	Loss vec:  [0.016857525102320841 0.00048473812563044617 1.2727377487142205e-05]
+Epoch: 70000 / 50000 	Loss: 0.013118363415730706 	Loss vec:  [0.012354748015197273 0.0007472190610237797 1.6396339509652427e-05]
+Epoch: 75000 / 50000 	Loss: 0.0035217933738169917 	Loss vec:  [0.0028606018677488679 0.00064386035848770817 1.7331147580415682e-05]
+Epoch: 80000 / 50000 	Loss: 0.001156903763350671 	Loss vec:  [0.0008873469031513095 0.00026048374486074578 9.07311533861561e-06]
+Epoch: 85000 / 50000 	Loss: 0.00039788750953382717 	Loss vec:  [0.0002481984717536215 0.00014497233075495686 4.716707025248852e-06]
+Epoch: 90000 / 50000 	Loss: 0.00019379028919641917 	Loss vec:  [0.00010561122967136492 8.5504148938187114e-05 2.6749105868671471e-06]
+Epoch: 95000 / 50000 	Loss: 0.00011931328259835901 	Loss vec:  [6.24861878035616e-05 5.5211587688565439e-05 1.6155071062319724e-06]
+Epoch: 100000 / 50000 	Loss: 8.6209721406914255e-05 	Loss vec:  [4.5120815832007272e-05 4.006297443212378e-05 1.0259311427831951e-06]
+Epoch: 105000 / 50000 	Loss: 6.3332490251029561e-05 	Loss vec:  [3.256820284621902e-05 3.0120269473857423e-05 6.4401793095310871e-07]
+
+Checkpoint 1 of 1
+Ra = 1e6
+Psi_Mid_Point: 	 -3.1186918353120916 	Reference:	 16.32
+u_max: 	 -51.6613283228301 	Reference:	 64.63
+w_max: 	 -116.68392595802452 	Reference:	 219.36
+
+Code Runtime:
+0:7:5:31 (Days:Hours:Minutes:Seconds)
+
+/blue/cmcdevitt-roy/2023-EricConsolidatingThermalCavity/ai_collaboration/codes/ThermalCavity/2D-ThermalCavity
+models/2023-12-10-22:05:55--Ra=1e6--nepochs=5e4//Big_Plots/Ra=1e6_outputs_0_50000.png
+/blue/cmcdevitt-roy/2023-EricConsolidatingThermalCavity/ai_collaboration/codes/ThermalCavity/2D-ThermalCavity
+models/2023-12-10-22:05:55--Ra=1e6--nepochs=5e4//Big_Plots/Ra=1e6_outputs_50000_50000.png
+Request Start Time:	2023-12-10-22:05:55
+Code Start Time:   	2023-12-10-22:51:02
+Code End Time:     	2023-12-11-05:56:37
+
