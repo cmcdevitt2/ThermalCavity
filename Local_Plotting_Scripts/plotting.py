@@ -51,19 +51,22 @@ inputs = np.concatenate((xx.reshape(-1,1),yy.reshape(-1,1)),axis=1)
 # %%
 if __name__ == "__main__":
 
-    for ra in plotDict2D:
-        path = plotDict2D[ra]
-        model = keras.models.load_model(path)
-        outputs = pf.output_transform(model,inputs).numpy()
-        pf.big_plot(outputs,xx,yy,nx,ra,save_path+"2D_")
+    # for ra in plotDict2D:
+    #     path = plotDict2D[ra]
+    #     model = keras.models.load_model(path)
+    #     outputs = pf.output_transform(model,inputs).numpy()
+    #     pf.big_plot(outputs,xx,yy,nx,ra,save_path+"2D_")
 
 
     model3D = keras.models.load_model(plot3D)
-    for plotWanted in plotsWanted3D:
-        ra = plotsWanted3D[plotWanted]
-        raInput = (np.log10(ra)-3)/3
-        xr,yr,zr = np.meshgrid(x,x,raInput)
-        inputsr = np.concatenate((xr.reshape(-1,1),yr.reshape(-1,1),zr.reshape(-1,1)),axis=1)
-        outputsr = pf.output_transform3d(model3D,inputsr).numpy()
-        pf.big_plot(outputsr,xr[:,:,0],yr[:,:,0],nx,plotWanted,save_path+"3D_")
-        pf.plotRaDerivatives(model3D,inputsr,nx,plotWanted,save_path+"3D_")
+    # for plotWanted in plotsWanted3D:
+    #     ra = plotsWanted3D[plotWanted]
+    #     raInput = (np.log10(ra)-3)/3
+    #     xr,yr,zr = np.meshgrid(x,x,raInput)
+    #     inputsr = np.concatenate((xr.reshape(-1,1),yr.reshape(-1,1),zr.reshape(-1,1)),axis=1)
+    #     outputsr = pf.output_transform3d(model3D,inputsr).numpy()
+    #     pf.big_plot(outputsr,xr[:,:,0],yr[:,:,0],nx,plotWanted,save_path+"3D_")
+    #     pf.plotRaDerivatives(model3D,inputsr,nx,plotWanted,save_path+"3D_")
+
+    pf.midPlanePlots(plotDict2D,plotsWanted3D,model3D)
+

@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import keras
 
 # import keras
 # from keras.layers import Layer
@@ -187,7 +188,7 @@ def big_plot(outputs, xx, yy, theLength, Ra_string, save_path):
         ("wT_z", r"$\frac{{\partial}(wT)}{{\partial}z}$", 10),
     )
 
-    nlevels = 50
+    nlevels = 10
 
     plt.figure(figsize=(15, 9), dpi=200)
     xlen = ylen = theLength
@@ -229,7 +230,7 @@ def plotRaDerivatives(model3d, inputsr, nx, Ra_string, save_path):
     xx = x.numpy().reshape(nx, nx)
     yy = z.numpy().reshape(nx, nx)
 
-    nlevels = 50
+    nlevels = 10
 
     with tf.GradientTape(persistent=True) as tape:
         input_tensor = tf.transpose(tf.concat([x, z, Ra], 0))
@@ -260,18 +261,22 @@ def plotRaDerivatives(model3d, inputsr, nx, Ra_string, save_path):
 
         plots = [stream_ra, T_ra, u_ra, w_ra]
 
-        raPrime = inputsr[0,2]
+        raPrime = inputsr[0, 2]
 
-        derivScaleRa = 1/(10**(raPrime*3+3))
+        derivScaleRa = 1 / (10 ** (raPrime * 3 + 3))
 
-        plt.figure(figsize=(10, 10),dpi=200)
+        plt.figure(figsize=(10, 10), dpi=200)
         for ii, title in enumerate(titles):
             plt.subplot(2, 2, ii + 1)
             ax = plt.gca()
             ax.set_aspect("equal", "box")
             divider = make_axes_locatable(ax)
             plt.contourf(
-                xx, yy, derivScaleRa*plots[ii].numpy().reshape(nx, nx), levels=nlevels, cmap="jet"
+                xx,
+                yy,
+                derivScaleRa * plots[ii].numpy().reshape(nx, nx),
+                levels=nlevels,
+                cmap="jet",
             )
             plt.xlabel(r"$x$", fontsize=30)
             plt.ylabel(r"$z$", fontsize=30)
@@ -286,3 +291,113 @@ def plotRaDerivatives(model3d, inputsr, nx, Ra_string, save_path):
         plt.tight_layout()
         plt.savefig(fname=f"{save_path}Derivatives_{Ra_string}.png")
         plt.close("all")
+
+
+def midPlanePlots(plotDict2D, plotsWanted3D, model3D):
+    npoints = 100
+    plotPoints = np.linspace(0, 1, endpoint=True, num=npoints).reshape(-1, 1)
+    midPoints = np.ones_like(plotPoints)*0.5
+
+    """
+    This section is for the horizontal cross section
+    constant z = 0.5
+    """
+
+    x = tf.Variable([plotPoints[:, 0]], dtype=tf.float64)
+    z = tf.Variable([midPoints[:, 0]], dtype=tf.float64)
+
+    raBase = np.ones_like(midPoints)
+
+    listData2d = []
+    listData3d = []
+    listData3dGrads = []
+
+    raKeyList = list(plotDict2D.keys())
+
+    for ra in raKeyList:
+        path = plotDict2D[ra]
+        model = keras.models.load_model(path)
+        with tf.GradientTape(persistent=True) as tape:
+            input_tensor = tf.transpose(tf.concat([x, z], 0))
+            model = keras.models.load_model(path)
+            outputs = model(input_tensor, training=False)
+            bcv = 16 * x * (1 - x) * z * (1 - z)
+
+            stream = -bcv * bcv * outputs[:, 0]
+            stream = tf.reshape(stream, (1, -1))
+            u = tape.gradient(stream, z)
+            stream_x = tape.gradient(stream, x)
+            w = -1 * stream_x
+            T_hard = 1 - (1 - 0) * x
+            T = T_hard + tf.sin(np.pi * x) * outputs[:, 1]
+            T = tf.reshape(T, (1, -1))
+
+            vort = -1 * (tape.gradient(u, z) + tape.gradient(stream_x, x))
+
+            stream = tf.reshape(stream, (-1, 1))
+            T = tf.reshape(T, (-1, 1))
+            u = tf.reshape(u, (-1, 1))
+            w = tf.reshape(w, (-1, 1))
+            vort = tf.reshape(vort, (-1, 1))
+            answers = tf.concat((stream, T, u, w, vort), axis=1)
+
+        dataPlot2d = answers.numpy()
+        listData2d.append(dataPlot2d)
+        raval = (np.log10(plotsWanted3D[ra])-3)/3
+        Ra = tf.Variable([raBase[:, 0] * raval], dtype=tf.float64)
+        with tf.GradientTape(persistent=True) as tape:
+            input_tensor3d = tf.transpose(tf.concat([x, z, Ra], 0))
+            outputs = model3D(input_tensor3d, training=False)
+            bcv = 16 * x * (1 - x) * z * (1 - z)
+
+            stream = -bcv * bcv * outputs[:, 0]
+            stream = tf.reshape(stream, (1, -1))
+            u = tape.gradient(stream, z)
+            stream_x = tape.gradient(stream, x)
+            w = -1 * stream_x
+            T_hard = 1 - (1 - 0) * x
+            T = T_hard + tf.sin(np.pi * x) * outputs[:, 1]
+            T = tf.reshape(T, (1, -1))
+
+            vort = -1 * (tape.gradient(u, z) + tape.gradient(stream_x, x))
+
+            answers3d = tf.concat((stream, T, u, w, vort), axis=1)
+
+            stream_ra = tape.gradient(stream, Ra)
+
+            derivScaleRa = 1 / (10 ** (raval * 3 + 3))
+            T_ra = tape.gradient(T*derivScaleRa, Ra)
+            u_ra = tape.gradient(u*derivScaleRa, Ra)
+            w_ra = tape.gradient(w*derivScaleRa, Ra)
+            vort_ra = tape.gradient(vort*derivScaleRa, Ra)
+
+            answers3dGrads = tf.concat((stream_ra, T_ra, u_ra, w_ra, vort_ra), axis=1)
+        dataPlot3d = answers3d.numpy()
+        listData3d.append(dataPlot3d)
+        dataPlot3dGrads = answers3dGrads.numpy()
+        listData3dGrads.append(dataPlot3dGrads)
+
+    nRaPoints = len(listData3d)
+    
+    plotNameList = [r"$\Psi$",r"$T$",r"$u$",r"$w$"]
+
+    nPlots = len(plotNameList)
+
+    plt.figure()
+    for ii in range(nRaPoints):
+        for jj in range(nPlots):
+            plt.subplot(2, 2, jj+1)
+            plt.plot(plotPoints, listData2d[ii][:,jj],label=f"{raKeyList[ii]}")
+
+    for jj in range(nPlots):
+        plt.subplot(2, 2, jj+1)
+        plt.xlabel(r"$x$")
+        plt.ylabel(r"$z$")
+        plt.title(plotNameList[jj])
+        plt.legend()
+        plt.grid()
+
+
+    plt.suptitle(r"$z = 0.5$")
+    plt.tight_layout()
+    plt.show()
