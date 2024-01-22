@@ -1,0 +1,1 @@
+sbatch --output=models/2024-01-16-10:41:51--Ra=1e4--nepochs=4e4/log.out --export=DATE_TIME=2024-01-16-10:41:51 models/2024-01-16-10:41:51--Ra=1e4--nepochs=4e4/job.slurm

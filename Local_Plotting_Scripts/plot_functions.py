@@ -293,7 +293,7 @@ def plotRaDerivatives(model3d, inputsr, nx, Ra_string, save_path):
         plt.close("all")
 
 
-def midPlanePlots(plotDict2D, plotsWanted3D, model3D):
+def zmidPlanePlots(plotDict2D, plotsWanted3D, model3D,save_path):
     npoints = 100
     plotPoints = np.linspace(0, 1, endpoint=True, num=npoints).reshape(-1, 1)
     midPoints = np.ones_like(plotPoints)*0.5
@@ -371,6 +371,151 @@ def midPlanePlots(plotDict2D, plotsWanted3D, model3D):
             w_ra = tape.gradient(w*derivScaleRa, Ra)
             vort_ra = tape.gradient(vort*derivScaleRa, Ra)
 
+            stream_ra = tf.reshape(stream_ra,(-1,1))
+            T_ra = tf.reshape(T_ra,(-1,1))
+            u_ra = tf.reshape(u_ra,(-1,1))
+            w_ra = tf.reshape(w_ra,(-1,1))
+            vort_ra = tf.reshape(vort_ra,(-1,1))
+
+            answers3dGrads = tf.concat((stream_ra, T_ra, u_ra, w_ra, vort_ra), axis=1)
+            # print(answers3dGrads)
+        dataPlot3d = answers3d.numpy()
+        listData3d.append(dataPlot3d)
+        dataPlot3dGrads = answers3dGrads.numpy()
+        listData3dGrads.append(dataPlot3dGrads)
+
+    nRaPoints = len(listData3d)
+    
+    plotNameList = [r"$\Psi$",r"$T$",r"$u$",r"$w$"]
+
+    nPlots = len(plotNameList)
+
+    xticks = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+    # xticks = [0,0.25,0.5,0.75,1]
+
+    fig, axs = plt.subplots(nPlots,nRaPoints,layout='compressed',figsize=(10,10))
+    for ii in range(nRaPoints):
+        for jj in range(nPlots):
+            sub = axs[ii,jj]
+            sub.plot(plotPoints,listData2d[ii][:,jj])
+            sub.set_xlabel(r"$x$",size=16)
+            sub.set_ylabel(plotNameList[jj],size=16)
+            sub.set_title(f"Ra = {raKeyList[ii]}")
+            sub.set_aspect('auto',adjustable='box')
+            sub.set_xticks(xticks,xticks,rotation=90,ha='center')
+            # sub.set_yticks(np.arange(0,1,0.1))
+            sub.grid()
+
+
+
+    plt.suptitle(r"$z = 0.5$")
+    fig.savefig(fname=f"{save_path}zMidPlanePlots.png")
+
+    derivPlotNameList = [r"$\frac{\partial{\Psi}}{\partial{Ra}}{$",r"$\frac{\partial{T}}{\partial{Ra}}$",r"$\frac{\partial{u}}{\partial{Ra}}$",r"$\frac{\partial{w}}{\partial{Ra}}$"]
+
+    fig, axs = plt.subplots(nPlots,nRaPoints,layout='compressed',figsize=(10,10))
+    for ii in range(nRaPoints):
+        for jj in range(nPlots):
+            sub = axs[ii,jj]
+            sub.plot(plotPoints,listData3dGrads[ii][:,jj])
+            sub.set_xlabel(r"$x$",size=16)
+            sub.set_ylabel(derivPlotNameList[jj],size=16)
+            sub.set_title(f"Ra = {raKeyList[ii]}")
+            sub.set_aspect('auto',adjustable='box')
+            sub.set_xticks(xticks,xticks,rotation=90,ha='center')
+            sub.grid()
+
+
+
+    plt.suptitle(r"Gradients At $z = 0.5$")
+    fig.savefig(fname=f"{save_path}zMidPlaneDerivatives.png")
+
+
+
+def xmidPlanePlots(plotDict2D, plotsWanted3D, model3D,save_path):
+    npoints = 100
+    plotPoints = np.linspace(0, 1, endpoint=True, num=npoints).reshape(-1, 1)
+    midPoints = np.ones_like(plotPoints)*0.5
+
+    """
+    This section is for the horizontal cross section
+    constant z = 0.5
+    """
+
+    x = tf.Variable([midPoints[:, 0]], dtype=tf.float64)
+    z = tf.Variable([plotPoints[:, 0]], dtype=tf.float64)
+
+    raBase = np.ones_like(midPoints)
+
+    listData2d = []
+    listData3d = []
+    listData3dGrads = []
+
+    raKeyList = list(plotDict2D.keys())
+
+    for ra in raKeyList:
+        path = plotDict2D[ra]
+        model = keras.models.load_model(path)
+        with tf.GradientTape(persistent=True) as tape:
+            input_tensor = tf.transpose(tf.concat([x, z], 0))
+            model = keras.models.load_model(path)
+            outputs = model(input_tensor, training=False)
+            bcv = 16 * x * (1 - x) * z * (1 - z)
+
+            stream = -bcv * bcv * outputs[:, 0]
+            stream = tf.reshape(stream, (1, -1))
+            u = tape.gradient(stream, z)
+            stream_x = tape.gradient(stream, x)
+            w = -1 * stream_x
+            T_hard = 1 - (1 - 0) * x
+            T = T_hard + tf.sin(np.pi * x) * outputs[:, 1]
+            T = tf.reshape(T, (1, -1))
+
+            vort = -1 * (tape.gradient(u, z) + tape.gradient(stream_x, x))
+
+            stream = tf.reshape(stream, (-1, 1))
+            T = tf.reshape(T, (-1, 1))
+            u = tf.reshape(u, (-1, 1))
+            w = tf.reshape(w, (-1, 1))
+            vort = tf.reshape(vort, (-1, 1))
+            answers = tf.concat((stream, T, u, w, vort), axis=1)
+
+        dataPlot2d = answers.numpy()
+        listData2d.append(dataPlot2d)
+        raval = (np.log10(plotsWanted3D[ra])-3)/3
+        Ra = tf.Variable([raBase[:, 0] * raval], dtype=tf.float64)
+        with tf.GradientTape(persistent=True) as tape:
+            input_tensor3d = tf.transpose(tf.concat([x, z, Ra], 0))
+            outputs = model3D(input_tensor3d, training=False)
+            bcv = 16 * x * (1 - x) * z * (1 - z)
+
+            stream = -bcv * bcv * outputs[:, 0]
+            stream = tf.reshape(stream, (1, -1))
+            u = tape.gradient(stream, z)
+            stream_x = tape.gradient(stream, x)
+            w = -1 * stream_x
+            T_hard = 1 - (1 - 0) * x
+            T = T_hard + tf.sin(np.pi * x) * outputs[:, 1]
+            T = tf.reshape(T, (1, -1))
+
+            vort = -1 * (tape.gradient(u, z) + tape.gradient(stream_x, x))
+
+            answers3d = tf.concat((stream, T, u, w, vort), axis=1)
+
+            stream_ra = tape.gradient(stream, Ra)
+
+            derivScaleRa = 1 / (10 ** (raval * 3 + 3))
+            T_ra = tape.gradient(T*derivScaleRa, Ra)
+            u_ra = tape.gradient(u*derivScaleRa, Ra)
+            w_ra = tape.gradient(w*derivScaleRa, Ra)
+            vort_ra = tape.gradient(vort*derivScaleRa, Ra)
+
+            stream_ra = tf.reshape(stream_ra,(-1,1))
+            T_ra = tf.reshape(T_ra,(-1,1))
+            u_ra = tf.reshape(u_ra,(-1,1))
+            w_ra = tf.reshape(w_ra,(-1,1))
+            vort_ra = tf.reshape(vort_ra,(-1,1))
+
             answers3dGrads = tf.concat((stream_ra, T_ra, u_ra, w_ra, vort_ra), axis=1)
         dataPlot3d = answers3d.numpy()
         listData3d.append(dataPlot3d)
@@ -383,21 +528,156 @@ def midPlanePlots(plotDict2D, plotsWanted3D, model3D):
 
     nPlots = len(plotNameList)
 
-    plt.figure()
+    xticks = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+    # xticks = [0,0.25,0.5,0.75,1]
+
+    fig, axs = plt.subplots(nPlots,nRaPoints,layout='compressed',figsize=(10,10))
     for ii in range(nRaPoints):
         for jj in range(nPlots):
-            plt.subplot(2, 2, jj+1)
-            plt.plot(plotPoints, listData2d[ii][:,jj],label=f"{raKeyList[ii]}")
+            sub = axs[ii,jj]
+            sub.plot(plotPoints,listData2d[ii][:,jj])
+            sub.set_xlabel(r"$z$",size=16)
+            sub.set_ylabel(plotNameList[jj],size=16)
+            sub.set_title(f"Ra = {raKeyList[ii]}")
+            sub.set_aspect('auto',adjustable='box')
+            sub.set_xticks(xticks,xticks,rotation=90,ha='center')
+            sub.grid()
 
-    for jj in range(nPlots):
-        plt.subplot(2, 2, jj+1)
-        plt.xlabel(r"$x$")
-        plt.ylabel(r"$z$")
-        plt.title(plotNameList[jj])
-        plt.legend()
-        plt.grid()
+    fig.suptitle(r"$x = 0.5$")
+
+    fig.savefig(fname=f"{save_path}xMidPlanePlots.png")
+
+    derivPlotNameList = [r"$\frac{\partial{\Psi}}{\partial{Ra}}{$",r"$\frac{\partial{T}}{\partial{Ra}}$",r"$\frac{\partial{u}}{\partial{Ra}}$",r"$\frac{\partial{w}}{\partial{Ra}}$"]
+    fig, axs = plt.subplots(nPlots,nRaPoints,layout='compressed',figsize=(10,10))
+    for ii in range(nRaPoints):
+        for jj in range(nPlots):
+            sub = axs[ii,jj]
+            sub.plot(plotPoints,listData3dGrads[ii][:,jj])
+            sub.set_xlabel(r"$z$",size=16)
+            sub.set_ylabel(derivPlotNameList[jj],size=16)
+            sub.set_title(f"Ra = {raKeyList[ii]}")
+            sub.set_aspect('auto',adjustable='box')
+            sub.set_xticks(xticks,xticks,rotation=90,ha='center')
+            sub.grid()
 
 
-    plt.suptitle(r"$z = 0.5$")
-    plt.tight_layout()
-    plt.show()
+
+    plt.suptitle(r"Gradients At $x = 0.5$")
+    fig.savefig(fname=f"{save_path}xMidPlaneDerivatives.png")
+    
+
+def xmidPlaneDerivatives(plotDict2D, plotsWanted3D, model3D,save_path):
+    npoints = 100
+    plotPoints = np.linspace(0, 1, endpoint=True, num=npoints).reshape(-1, 1)
+    midPoints = np.ones_like(plotPoints)*0.5
+
+    """
+    This section is for the horizontal cross section
+    constant z = 0.5
+    """
+
+    x = tf.Variable([midPoints[:, 0]], dtype=tf.float64)
+    z = tf.Variable([plotPoints[:, 0]], dtype=tf.float64)
+
+    raBase = np.ones_like(midPoints)
+
+    listData2d = []
+    listData3d = []
+    listData3dGrads = []
+
+    raKeyList = list(plotDict2D.keys())
+
+    for ra in raKeyList:
+        path = plotDict2D[ra]
+        model = keras.models.load_model(path)
+        with tf.GradientTape(persistent=True) as tape:
+            input_tensor = tf.transpose(tf.concat([x, z], 0))
+            model = keras.models.load_model(path)
+            outputs = model(input_tensor, training=False)
+            bcv = 16 * x * (1 - x) * z * (1 - z)
+
+            stream = -bcv * bcv * outputs[:, 0]
+            stream = tf.reshape(stream, (1, -1))
+            u = tape.gradient(stream, z)
+            stream_x = tape.gradient(stream, x)
+            w = -1 * stream_x
+            T_hard = 1 - (1 - 0) * x
+            T = T_hard + tf.sin(np.pi * x) * outputs[:, 1]
+            T = tf.reshape(T, (1, -1))
+
+            vort = -1 * (tape.gradient(u, z) + tape.gradient(stream_x, x))
+
+            stream = tape.gradient(stream,Ra)
+
+            stream = tf.reshape(stream, (-1, 1))
+            T = tf.reshape(T, (-1, 1))
+            u = tf.reshape(u, (-1, 1))
+            w = tf.reshape(w, (-1, 1))
+            vort = tf.reshape(vort, (-1, 1))
+
+            """
+            Calculate gradients here
+            """
+
+            answers = tf.concat((stream, T, u, w, vort), axis=1)
+
+        dataPlot2d = answers.numpy()
+        listData2d.append(dataPlot2d)
+        raval = (np.log10(plotsWanted3D[ra])-3)/3
+        Ra = tf.Variable([raBase[:, 0] * raval], dtype=tf.float64)
+        with tf.GradientTape(persistent=True) as tape:
+            input_tensor3d = tf.transpose(tf.concat([x, z, Ra], 0))
+            outputs = model3D(input_tensor3d, training=False)
+            bcv = 16 * x * (1 - x) * z * (1 - z)
+
+            stream = -bcv * bcv * outputs[:, 0]
+            stream = tf.reshape(stream, (1, -1))
+            u = tape.gradient(stream, z)
+            stream_x = tape.gradient(stream, x)
+            w = -1 * stream_x
+            T_hard = 1 - (1 - 0) * x
+            T = T_hard + tf.sin(np.pi * x) * outputs[:, 1]
+            T = tf.reshape(T, (1, -1))
+
+            vort = -1 * (tape.gradient(u, z) + tape.gradient(stream_x, x))
+
+            answers3d = tf.concat((stream, T, u, w, vort), axis=1)
+
+            stream_ra = tape.gradient(stream, Ra)
+
+            derivScaleRa = 1 / (10 ** (raval * 3 + 3))
+            T_ra = tape.gradient(T*derivScaleRa, Ra)
+            u_ra = tape.gradient(u*derivScaleRa, Ra)
+            w_ra = tape.gradient(w*derivScaleRa, Ra)
+            vort_ra = tape.gradient(vort*derivScaleRa, Ra)
+
+            answers3dGrads = tf.concat((stream_ra, T_ra, u_ra, w_ra, vort_ra), axis=1)
+        dataPlot3d = answers3d.numpy()
+        listData3d.append(dataPlot3d)
+        dataPlot3dGrads = answers3dGrads.numpy()
+        listData3dGrads.append(dataPlot3dGrads)
+
+    nRaPoints = len(listData3d)
+    
+    plotNameList = [r"$\Psi$",r"$T$",r"$u$",r"$w$"]
+
+    nPlots = len(plotNameList)
+
+    xticks = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+    # xticks = [0,0.25,0.5,0.75,1]
+
+    fig, axs = plt.subplots(nPlots,nRaPoints,layout='compressed',figsize=(10,10))
+    for ii in range(nRaPoints):
+        for jj in range(nPlots):
+            sub = axs[ii,jj]
+            sub.plot(plotPoints,listData2d[ii][:,jj])
+            sub.set_xlabel(r"$z$")
+            sub.set_ylabel(plotNameList[jj])
+            sub.set_title(f"Ra = {raKeyList[ii]}")
+            sub.set_aspect('auto',adjustable='box')
+            sub.set_xticks(xticks,xticks,rotation=90,ha='center')
+            sub.grid()
+
+    fig.suptitle(r"$x = 0.5$")
+
+    fig.savefig(fname=f"{save_path}xMidPlanePlots.png")
